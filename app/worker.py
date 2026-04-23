@@ -2,7 +2,10 @@
 
 import yt_dlp
 import subprocess
-from app.jobs import update_job, job_queue
+import os
+
+from app.jobs import job_queue, update_job
+from app.uploader import upload_to_gcs
 
 
 def download(url, output):
@@ -36,18 +39,35 @@ def cut(input_file, start, duration, output):
 
 
 def worker_loop():
+    os.makedirs("outputs", exist_ok=True)
+
     while True:
         job_id, data = job_queue.get()
 
         try:
             update_job(job_id, "processing")
 
-            input_file = download(data["url"], f"outputs/{job_id}")
+            input_file = download(
+                data["url"],
+                f"outputs/{job_id}"
+            )
+
             output_file = f"outputs/{job_id}_clip.mp4"
 
-            cut(input_file, data["start"], data["duration"], output_file)
+            cut(
+                input_file,
+                data["start"],
+                data["duration"],
+                output_file
+            )
 
-            update_job(job_id, "done", output_file)
+            # Upload to GCS
+            url = upload_to_gcs(
+                output_file,
+                f"clips/{job_id}.mp4"
+            )
+
+            update_job(job_id, "done", result=url)
 
         except Exception as e:
-            update_job(job_id, "failed", str(e))
+            update_job(job_id, "failed", error=str(e))
