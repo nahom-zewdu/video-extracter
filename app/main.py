@@ -2,13 +2,13 @@
 
 from fastapi import FastAPI
 from app.models import ClipRequest
-from app.jobs import create_job, job_store
+from app.jobs import create_job, get_job
 from app.worker import worker_loop
 import threading
 
 app = FastAPI()
 
-# start worker thread
+# Start worker thread (Cloud Run v1 assumption)
 threading.Thread(target=worker_loop, daemon=True).start()
 
 
@@ -20,4 +20,13 @@ def create_clip(req: ClipRequest):
 
 @app.get("/clip/{job_id}")
 def get_clip(job_id: str):
-    return job_store.get(job_id, {"error": "not found"})
+    job = get_job(job_id)
+
+    if not job:
+        return {"error": "not found"}
+
+    return {
+        "status": job["status"],
+        "video_url": job.get("result"),
+        "error": job.get("error")
+    }
