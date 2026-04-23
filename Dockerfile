@@ -1,26 +1,20 @@
 FROM python:3.13-slim
 
-# system deps (ffmpeg is critical)
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    curl \
+RUN apt-get update && apt-get install -y ffmpeg curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# install uv
-RUN pip install uv
+# 1. install dependencies FIRST (cacheable layer)
+COPY requirements.txt .
 
-# copy project
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 2. copy app AFTER dependencies
 COPY . .
 
-# install python deps via uv
-RUN uv pip install fastapi uvicorn yt-dlp google-cloud-storage
-
-# create output dir
 RUN mkdir -p outputs
 
-# Cloud Run listens on 8080
 ENV PORT=8080
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
