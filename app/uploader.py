@@ -1,11 +1,14 @@
+# app/uploader.py
+
 from google.cloud import storage
-import os
 
 BUCKET_NAME = "bucket-name"
 
-client = storage.Client()
+def get_client():
+    return storage.Client()
 
 def upload_to_gcs(file_path, object_name):
+    client = get_client()
     bucket = client.bucket(BUCKET_NAME)
     blob = bucket.blob(object_name)
 
