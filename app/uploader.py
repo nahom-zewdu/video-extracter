@@ -2,7 +2,7 @@
 
 from google.cloud import storage
 
-BUCKET_NAME = "bucket-name"
+BUCKET_NAME = "extracted-videos"
 
 def get_client():
     return storage.Client()
