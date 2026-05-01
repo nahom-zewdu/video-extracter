@@ -1,6 +1,5 @@
 # app/worker.py
 
-import yt_dlp
 import subprocess
 import os
 
@@ -11,21 +10,6 @@ from app.downloader import (
     get_download_url,
     download_file,
 )
-
-
-def download(url, output):
-    ydl_opts = {
-        "format": "bestvideo+bestaudio/best",
-        "outtmpl": output + ".%(ext)s",
-        "merge_output_format": "mp4",
-        "quiet": True,
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
-
-    return output + ".mp4"
-
 
 def cut(input_file, start, duration, output):
     cmd = [
