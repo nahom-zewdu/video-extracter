@@ -7,6 +7,11 @@ import os
 from app.jobs import job_queue, update_job
 from app.uploader import upload_to_gcs
 
+from app.downloader import (
+    get_download_url,
+    download_file,
+)
+
 
 def download(url, output):
     ydl_opts = {
@@ -47,9 +52,11 @@ def worker_loop():
         try:
             update_job(job_id, "processing")
 
-            input_file = download(
-                data["url"],
-                f"outputs/{job_id}"
+            download_url = get_download_url(data["url"])
+
+            input_file = download_file(
+                download_url,
+                f"outputs/{job_id}.mp4"
             )
 
             output_file = f"outputs/{job_id}_clip.mp4"
