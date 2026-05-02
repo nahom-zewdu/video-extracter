@@ -1,33 +1,50 @@
 # app/downloader.py
 
-import requests
+import yt_dlp
 
 
-def get_download_url(video_url: str) -> str:
+def download_video(video_url: str, output_path: str):
     """
-    Call external downloader API
-    and return direct downloadable MP4 URL.
+    Download YouTube video using yt-dlp
+    with safer extractor/client settings.
     """
 
-    response = requests.post(
-        "https://example-api.com/download",
-        json={"url": video_url},
-        timeout=60,
-    )
+    output_template = output_path.replace(".mp4", ".%(ext)s")
 
-    response.raise_for_status()
+    ydl_opts = {
+        "format": "bestvideo+bestaudio/best",
+        "merge_output_format": "mp4",
+        "outtmpl": output_template,
+        "quiet": True,
 
-    data = response.json()
+        # Important
+        "extractor_args": {
+            "youtube": {
+                "player_client": [
+                    "android",
+                    "web_safari",
+                    "web"
+                ]
+            }
+        },
 
-    return data["download_url"]
+        # Browser-like headers
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/122.0.0.0 Safari/537.36"
+            ),
+            "Referer": "https://www.youtube.com/"
+        },
 
-def download_file(url: str, output_path: str):
-    response = requests.get(url, stream=True)
+        # Extra reliability
+        "retries": 10,
+        "fragment_retries": 10,
+        "nocheckcertificate": True,
+    }
 
-    response.raise_for_status()
-
-    with open(output_path, "wb") as f:
-        for chunk in response.iter_content(chunk_size=8192):
-            f.write(chunk)
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([video_url])
 
     return output_path
