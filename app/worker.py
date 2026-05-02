@@ -2,14 +2,13 @@
 
 import subprocess
 import os
+import random
+import time
 
 from app.jobs import job_queue, update_job
 from app.uploader import upload_to_gcs
+from app.downloader import download_video
 
-from app.downloader import (
-    get_download_url,
-    download_file,
-)
 
 def cut(input_file, start, duration, output):
     cmd = [
@@ -36,10 +35,11 @@ def worker_loop():
         try:
             update_job(job_id, "processing")
 
-            download_url = get_download_url(data["url"])
+            # Small random delay
+            time.sleep(random.uniform(1, 4))
 
-            input_file = download_file(
-                download_url,
+            input_file = download_video(
+                data["url"],
                 f"outputs/{job_id}.mp4"
             )
 
@@ -58,7 +58,17 @@ def worker_loop():
                 f"clips/{job_id}.mp4"
             )
 
-            update_job(job_id, "done", result=url)
+            print(url)
+
+            update_job(
+                job_id,
+                "done",
+                result=url
+            )
 
         except Exception as e:
-            update_job(job_id, "failed", error=str(e))
+            update_job(
+                job_id,
+                "failed",
+                error=str(e)
+            )
